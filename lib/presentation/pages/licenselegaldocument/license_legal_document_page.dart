@@ -420,7 +420,7 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.grey,
-                      fontSize: isTV ? 18 : 16,
+                      fontSize: isTV ? 12 : 16,
                       fontWeight: FontWeight.bold,
                     ),
                     softWrap: true,

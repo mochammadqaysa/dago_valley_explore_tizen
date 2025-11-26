@@ -87,7 +87,7 @@ class ProductCard extends StatelessWidget {
                       Text(
                         "type".tr + " ${houseModel.model}",
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
@@ -95,7 +95,7 @@ class ProductCard extends StatelessWidget {
                       Text(
                         houseModel.type,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
@@ -138,7 +138,7 @@ class ProductCard extends StatelessWidget {
                           Text(
                             buttonText,
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 9,
                               fontWeight: FontWeight.normal,
                               color: Colors.white,
                             ),

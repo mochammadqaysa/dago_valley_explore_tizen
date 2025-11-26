@@ -126,7 +126,7 @@ class SitePlanCard extends StatelessWidget {
                             Text(
                               title,
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 14,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.white,
                               ),

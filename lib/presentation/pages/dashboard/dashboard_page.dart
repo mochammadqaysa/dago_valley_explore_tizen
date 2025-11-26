@@ -89,7 +89,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Container(
                     // height: 400,
-                    height: MediaQuery.of(context).size.height * 0.37,
+                    height: MediaQuery.of(context).size.height * 0.357,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -115,28 +115,32 @@ class _DashboardPageState extends State<DashboardPage> {
                               Text(
                                 "welcome_title".tr,
                                 style: TextStyle(
-                                  fontSize: 40,
+                                  fontSize: 30,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.white,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
                               SizedBox(height: 8),
-                              Text(
-                                localeController.isEnglish
-                                    ? _storage.housings?.welcomeTextEn ??
-                                          "welcome_desc"
-                                    : _storage.housings?.welcomeText ??
-                                          "welcome_desc",
-                                style: TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 16,
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.6,
+                                child: Text(
+                                  localeController.isEnglish
+                                      ? _storage.housings?.welcomeTextEn ??
+                                            "welcome_desc"
+                                      : _storage.housings?.welcomeText ??
+                                            "welcome_desc",
+                                  style: TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                               SizedBox(height: 8),
                               LiquidGlassButton(
-                                width: 200,
+                                width: 180,
+                                height: 40,
                                 borderRadius: 30,
                                 text: 'view_promo'.tr,
                                 onPressed: _showPromoModal,
@@ -151,7 +155,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   // Ganti dengan Row + MainAxisAlignment.spaceBetween
                   Container(
-                    height: MediaQuery.of(context).size.height * 0.475,
+                    height: MediaQuery.of(context).size.height * 0.44,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -223,7 +227,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   LiquidGlassContainer(
                     glassColor: Colors.black,
                     glassAccentColor: Colors.black,
-                    height: 90,
+                    height: 60,
                     width: double.infinity,
                     borderRadius: 17,
                     child: Row(

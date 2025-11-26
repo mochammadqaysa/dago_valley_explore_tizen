@@ -94,7 +94,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                 flex: 5,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 32.0,
+                    vertical: 17.0,
                     horizontal: 8.0,
                   ),
                   child: Column(
@@ -115,7 +115,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                 Text(
                                   'mortgage_simulation'.tr,
                                   style: TextStyle(
-                                    fontSize: 32,
+                                    fontSize: 18,
                                     color: textColor,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -123,7 +123,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                 Text(
                                   'mortgage_simulation_desc'.tr,
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 9,
                                     color: textColor,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -132,17 +132,18 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                 Text(
                                   'model_and_type'.tr,
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: textColor,
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                // const SizedBox(height: 16),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 4,
                                   ),
+                                  height: 35,
                                   decoration: BoxDecoration(
                                     border: Border.all(color: Colors.grey),
                                     borderRadius: BorderRadius.circular(4),
@@ -152,7 +153,10 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                     value: selectedModel,
                                     hint: Text(
                                       'choose_house_model'.tr,
-                                      style: TextStyle(color: Colors.grey),
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                     dropdownColor: cardColor,
                                     focusColor: cardColor,
@@ -162,7 +166,10 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                         value: m,
                                         child: Text(
                                           '${m.displayName} - Rp. ${_formatCurrency(m.hargaCash.round())}',
-                                          style: TextStyle(color: textColor),
+                                          style: TextStyle(
+                                            color: textColor,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       );
                                     }).toList(),
@@ -170,7 +177,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                         setState(() => selectedModel = v),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 5),
 
                                 Text(
                                   'payment_method'.tr,
@@ -185,7 +192,10 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                       child: RadioListTile<PaymentMethod>(
                                         title: Text(
                                           'sharia_bank_mortgage'.tr,
-                                          style: TextStyle(color: textColor),
+                                          style: TextStyle(
+                                            color: textColor,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                         value: PaymentMethod.kprSyariah,
                                         groupValue: paymentMethod,
@@ -203,7 +213,10 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                       child: RadioListTile<PaymentMethod>(
                                         title: Text(
                                           'developer_mortgage'.tr,
-                                          style: TextStyle(color: textColor),
+                                          style: TextStyle(
+                                            color: textColor,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                         value: PaymentMethod.developer,
                                         groupValue: paymentMethod,
@@ -225,7 +238,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                     color: textColor,
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 5),
 
                                 Slider(
                                   value: tenor.toDouble(),
@@ -246,7 +259,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                   ),
                                 ),
 
-                                const SizedBox(height: 16),
+                                // const SizedBox(height: 5),
                                 if (paymentMethod == PaymentMethod.developer)
                                   Row(
                                     children: [
@@ -263,8 +276,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                     ],
                                   ),
 
-                                const SizedBox(height: 16),
-
+                                // const SizedBox(height: 16),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -282,7 +294,6 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                               color: textColor,
                                             ),
                                           ),
-                                          const SizedBox(height: 8),
                                           Container(
                                             width: double
                                                 .infinity, // <-- biar ikut lebar Expanded
@@ -300,7 +311,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                                         .tr
                                                   : 'Rp ${_formatCurrency(controller.calculateDp(harga: selectedModel!.hargaCash.toDouble(), method: paymentMethod, tanpaDp: tanpaDp).round())}',
                                               style: TextStyle(
-                                                fontSize: 16,
+                                                fontSize: 12,
                                                 color: textColor,
                                               ),
                                             ),
@@ -309,7 +320,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                       ),
                                     ),
 
-                                    const SizedBox(width: 12),
+                                    // const SizedBox(width: 12),
 
                                     // === Kolom Margin (%) ===
                                     Expanded(
@@ -325,6 +336,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: textColor,
+                                                fontSize: 9,
                                               ),
                                             ),
                                             const SizedBox(height: 8),
@@ -433,66 +445,78 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                       child: Stack(
                                         alignment: Alignment.centerRight,
                                         children: [
-                                          TextField(
-                                            controller: _diskonRpController,
-                                            enabled: diskonPersen == null,
-                                            decoration: InputDecoration(
-                                              labelText:
-                                                  '${'discount'.tr} (Rp)',
-                                              border:
-                                                  const OutlineInputBorder(),
-                                              suffixIcon: diskonNominal != null
-                                                  ? IconButton(
-                                                      icon: const Icon(
-                                                        Icons.close,
-                                                      ),
-                                                      onPressed: () {
-                                                        _diskonRpController
-                                                            .clear();
-                                                        setState(() {
-                                                          diskonNominal = null;
-                                                        });
-                                                      },
-                                                    )
-                                                  : null,
-                                            ),
-                                            keyboardType: TextInputType.number,
-                                            style: TextStyle(
-                                              color: themeController.isDarkMode
-                                                  ? Colors.grey
-                                                  : Colors.black,
-                                            ),
-                                            onChanged: (v) {
-                                              String cleaned = v.replaceAll(
-                                                '.',
-                                                '',
-                                              );
-                                              double? val = double.tryParse(
-                                                cleaned,
-                                              );
-                                              if (val != null) {
-                                                setState(() {
-                                                  diskonNominal = val;
-                                                  diskonPersen = null;
-                                                });
-                                                _diskonRpController
-                                                    .value = TextEditingValue(
-                                                  text: rupiahFormat.format(
-                                                    val,
-                                                  ),
-                                                  selection:
-                                                      TextSelection.collapsed(
-                                                        offset: rupiahFormat
-                                                            .format(val)
-                                                            .length,
-                                                      ),
+                                          Container(
+                                            height: 35,
+                                            child: TextField(
+                                              controller: _diskonRpController,
+                                              enabled: diskonPersen == null,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 8,
+                                                    ),
+                                                labelText:
+                                                    '${'discount'.tr} (Rp)',
+                                                border:
+                                                    const OutlineInputBorder(),
+                                                suffixIcon:
+                                                    diskonNominal != null
+                                                    ? IconButton(
+                                                        icon: const Icon(
+                                                          Icons.close,
+                                                        ),
+                                                        onPressed: () {
+                                                          _diskonRpController
+                                                              .clear();
+                                                          setState(() {
+                                                            diskonNominal =
+                                                                null;
+                                                          });
+                                                        },
+                                                      )
+                                                    : null,
+                                              ),
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              style: TextStyle(
+                                                color:
+                                                    themeController.isDarkMode
+                                                    ? Colors.grey
+                                                    : Colors.black,
+                                              ),
+                                              onChanged: (v) {
+                                                String cleaned = v.replaceAll(
+                                                  '.',
+                                                  '',
                                                 );
-                                              } else if (v.isEmpty) {
-                                                setState(
-                                                  () => diskonNominal = null,
+                                                double? val = double.tryParse(
+                                                  cleaned,
                                                 );
-                                              }
-                                            },
+                                                if (val != null) {
+                                                  setState(() {
+                                                    diskonNominal = val;
+                                                    diskonPersen = null;
+                                                  });
+                                                  _diskonRpController
+                                                      .value = TextEditingValue(
+                                                    text: rupiahFormat.format(
+                                                      val,
+                                                    ),
+                                                    selection:
+                                                        TextSelection.collapsed(
+                                                          offset: rupiahFormat
+                                                              .format(val)
+                                                              .length,
+                                                        ),
+                                                  );
+                                                } else if (v.isEmpty) {
+                                                  setState(
+                                                    () => diskonNominal = null,
+                                                  );
+                                                }
+                                              },
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -502,41 +526,54 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                       child: Stack(
                                         alignment: Alignment.centerRight,
                                         children: [
-                                          TextField(
-                                            controller: _diskonPersenController,
-                                            enabled: diskonNominal == null,
-                                            decoration: InputDecoration(
-                                              labelText: '${'discount'.tr} (%)',
-                                              border:
-                                                  const OutlineInputBorder(),
-                                              suffixIcon: diskonPersen != null
-                                                  ? IconButton(
-                                                      icon: const Icon(
-                                                        Icons.close,
-                                                      ),
-                                                      onPressed: () {
-                                                        _diskonPersenController
-                                                            .clear();
-                                                        setState(() {
-                                                          diskonPersen = null;
-                                                        });
-                                                      },
-                                                    )
-                                                  : null,
+                                          Container(
+                                            height: 35,
+                                            child: TextField(
+                                              controller:
+                                                  _diskonPersenController,
+                                              enabled: diskonNominal == null,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 8,
+                                                    ),
+                                                labelText:
+                                                    '${'discount'.tr} (%)',
+                                                border:
+                                                    const OutlineInputBorder(),
+                                                suffixIcon: diskonPersen != null
+                                                    ? IconButton(
+                                                        icon: const Icon(
+                                                          Icons.close,
+                                                        ),
+                                                        onPressed: () {
+                                                          _diskonPersenController
+                                                              .clear();
+                                                          setState(() {
+                                                            diskonPersen = null;
+                                                          });
+                                                        },
+                                                      )
+                                                    : null,
+                                              ),
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              style: TextStyle(
+                                                color:
+                                                    themeController.isDarkMode
+                                                    ? Colors.grey
+                                                    : Colors.black,
+                                              ),
+                                              onChanged: (v) => setState(() {
+                                                diskonPersen =
+                                                    (v.trim().isEmpty)
+                                                    ? null
+                                                    : double.tryParse(v.trim());
+                                                if (diskonPersen != null)
+                                                  diskonNominal = null;
+                                              }),
                                             ),
-                                            keyboardType: TextInputType.number,
-                                            style: TextStyle(
-                                              color: themeController.isDarkMode
-                                                  ? Colors.grey
-                                                  : Colors.black,
-                                            ),
-                                            onChanged: (v) => setState(() {
-                                              diskonPersen = (v.trim().isEmpty)
-                                                  ? null
-                                                  : double.tryParse(v.trim());
-                                              if (diskonPersen != null)
-                                                diskonNominal = null;
-                                            }),
                                           ),
                                         ],
                                       ),
@@ -549,7 +586,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      // const SizedBox(height: 8),
                       if (selectedModel != null && result != null)
                         Expanded(
                           flex: 2,
@@ -570,14 +607,14 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                       Text(
                                         'Angsuran / Bulan',
                                         style: TextStyle(
-                                          fontSize: 18,
+                                          fontSize: 14,
                                           color: textColor,
                                         ),
                                       ),
                                       Text(
                                         'Rp ${(diskonNominal != null || diskonPersen != null) ? _formatCurrency(result.cicilanBulananSetelahDiskon.round()) : _formatCurrency(result.cicilanBulanan.round())}',
                                         style: TextStyle(
-                                          fontSize: 32,
+                                          fontSize: 22,
                                           fontWeight: FontWeight.bold,
                                           color: textColor,
                                         ),
@@ -590,7 +627,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                             Text(
                                               'Rp ${_formatCurrency(result.totalPembayaran.round())}',
                                               style: TextStyle(
-                                                fontSize: 16,
+                                                fontSize: 12,
                                                 decoration:
                                                     TextDecoration.lineThrough,
                                                 decorationColor: Colors.red,
@@ -601,7 +638,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                             Text(
                                               'Rp ${_formatCurrency(result.hargaSetelahDiskon.round())}',
                                               style: TextStyle(
-                                                fontSize: 16,
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.green,
                                               ),
@@ -612,7 +649,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                         Text(
                                           'Rp ${_formatCurrency(result.totalPembayaran.round())}',
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 12,
                                             color: textColor,
                                           ),
                                         ),
@@ -672,7 +709,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                         Text(
                                           '${'terms_n_conditions'.tr}:',
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                             color: textColor,
                                           ),
@@ -692,7 +729,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                                   Text(
                                                     '${index + 1}. ',
                                                     style: TextStyle(
-                                                      fontSize: 14,
+                                                      fontSize: 11,
                                                       color:
                                                           themeController
                                                               .isDarkMode
@@ -707,7 +744,7 @@ class _CashcalculatorPageState extends State<CashcalculatorPage> {
                                                       textAlign:
                                                           TextAlign.justify,
                                                       style: TextStyle(
-                                                        fontSize: 14,
+                                                        fontSize: 11,
                                                         color:
                                                             themeController
                                                                 .isDarkMode

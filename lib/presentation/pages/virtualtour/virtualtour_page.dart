@@ -146,7 +146,7 @@ class _VirtualtourPageState extends State<VirtualtourPage>
         ),
 
         floatingActionButton: Container(
-          margin: const EdgeInsets.only(top: 15, right: 650),
+          margin: const EdgeInsets.only(top: 15),
           child: FloatingActionButton.extended(
             onPressed: () => _showPanoramicView(),
             backgroundColor: AppColors.primary,
@@ -170,7 +170,7 @@ class _VirtualtourPageState extends State<VirtualtourPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             // SECTION HARMONI
             _buildSectionHeader(
@@ -289,7 +289,7 @@ class _VirtualtourPageState extends State<VirtualtourPage>
         Text(
           title,
           style: TextStyle(
-            fontSize: 32,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: themeController.isDarkMode ? Colors.white : Colors.black,
           ),
@@ -310,7 +310,7 @@ class _VirtualtourPageState extends State<VirtualtourPage>
           child: Text(
             subtitle,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 14,
               color: themeController.isDarkMode
                   ? Colors.white70
                   : Colors.black87,
@@ -343,8 +343,8 @@ class _VirtualtourPageState extends State<VirtualtourPage>
         children: filteredHouses.map((house) {
           // Faktor skala
           final double scaleFactor = useAspectRatio ? 1.5 : 1.0;
-          final double baseWidth = 181;
-          final double baseHeight = 242;
+          final double baseWidth = 100;
+          final double baseHeight = 130;
 
           return GestureDetector(
             onTap: () {

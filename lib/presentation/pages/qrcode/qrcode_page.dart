@@ -71,16 +71,16 @@ class QRCodePage extends GetView<QRCodeController> {
                         child: Center(
                           child: SingleChildScrollView(
                             child: Container(
-                              constraints: const BoxConstraints(maxWidth: 600),
+                              constraints: const BoxConstraints(maxWidth: 400),
                               margin: const EdgeInsets.symmetric(
-                                horizontal: 20,
+                                horizontal: 10,
                               ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   // Glass Container with QR Code
                                   Container(
-                                    padding: const EdgeInsets.all(40),
+                                    padding: const EdgeInsets.all(20),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(30),
@@ -133,7 +133,7 @@ class QRCodePage extends GetView<QRCodeController> {
                                             const Text(
                                               'Scan QR Code',
                                               style: TextStyle(
-                                                fontSize: 32,
+                                                fontSize: 22,
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.white,
                                               ),
@@ -144,17 +144,17 @@ class QRCodePage extends GetView<QRCodeController> {
                                             Text(
                                               'Cari "Dago Valley" di Google',
                                               style: TextStyle(
-                                                fontSize: 16,
+                                                fontSize: 14,
                                                 color: Colors.white.withOpacity(
                                                   0.8,
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(height: 32),
+                                            const SizedBox(height: 12),
 
                                             // QR Code
                                             Container(
-                                              padding: const EdgeInsets.all(20),
+                                              padding: const EdgeInsets.all(10),
                                               decoration: BoxDecoration(
                                                 color: Colors.white,
                                                 borderRadius:
@@ -171,7 +171,7 @@ class QRCodePage extends GetView<QRCodeController> {
                                               child: QrImageView(
                                                 data: controller.searchUrl,
                                                 version: QrVersions.auto,
-                                                size: 280,
+                                                size: 140,
                                                 backgroundColor: Colors.white,
                                                 eyeStyle: const QrEyeStyle(
                                                   eyeShape: QrEyeShape.square,

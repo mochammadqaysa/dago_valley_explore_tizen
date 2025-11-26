@@ -34,8 +34,8 @@ class CustomListTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: isCollapsed ? 300 : 70,
-        margin: const EdgeInsets.symmetric(vertical: 20),
+        width: isCollapsed ? 300 : 60,
+        margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: themeController.isDarkMode
               ? HexColor("282924")
@@ -45,7 +45,7 @@ class CustomListTile extends StatelessWidget {
               : Border.all(width: 4, color: Colors.transparent),
           borderRadius: BorderRadius.circular(8),
         ),
-        height: 70,
+        height: 55,
         child: Row(
           children: [
             Expanded(
@@ -54,7 +54,7 @@ class CustomListTile extends StatelessWidget {
                   clipBehavior: Clip.none,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(8),
                       child: SvgPicture.asset(
                         svgIcon,
                         color: themeController.isDarkMode

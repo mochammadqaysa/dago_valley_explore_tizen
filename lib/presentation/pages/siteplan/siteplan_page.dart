@@ -370,7 +370,14 @@ class SiteplanPage extends GetView<SiteplanController> {
             color: themeController.isDarkMode ? Colors.black : Colors.white,
             child: AspectRatio(
               aspectRatio: 17 / 10,
-              child: _buildPanoramaViewer(),
+              child: _buildComingSoonWidget(
+                context,
+                themeController,
+                icon: Icons.construction,
+                title: 'Kawasan 360° Coming Soon',
+                description:
+                    'Explore the 360-degree view of the kawasan soon. Stay tuned for updates!',
+              ),
             ),
           ),
         ),

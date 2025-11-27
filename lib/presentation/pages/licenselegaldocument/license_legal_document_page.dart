@@ -46,21 +46,32 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
       }
     });
 
-    loadPdfList();
+    // Load PDF list after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadPdfList();
+    });
   }
 
   void _showQRCodeModal([String? url]) {
     if (url == null || url.isEmpty) {
       try {
-        final storage = Get.find<LocalStorageService>();
-        final brochures = storage.brochures;
-        if (brochures != null && brochures.isNotEmpty) {
-          final first = brochures.first;
-          url = (first.imageUrl ?? '').toString();
+        // PERBAIKAN: Cek apakah service sudah di-inject
+        if (Get.isRegistered<LocalStorageService>()) {
+          final storage = Get.find<LocalStorageService>();
+          final brochures = storage.brochures;
+          if (brochures != null && brochures.isNotEmpty) {
+            final first = brochures.first;
+            url = (first.imageUrl ?? '').toString();
+          }
+        } else {
+          if (kDebugMode) {
+            print('LocalStorageService not registered');
+          }
         }
       } catch (e) {
-        if (kDebugMode)
+        if (kDebugMode) {
           print('Error fetching brochures from local storage: $e');
+        }
       }
     }
 
@@ -69,6 +80,8 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
         'QR Code',
         'Tidak ada URL brochure yang tersedia.',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
       return;
     }
@@ -86,6 +99,10 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
 
   @override
   void dispose() {
+    // PERBAIKAN: Dispose controllers dengan safe check
+    if (_mainTabController.hasListeners) {
+      _mainTabController.removeListener(() {});
+    }
     _mainTabController.dispose();
     _tahap1TabController.dispose();
     _tahap2TabController.dispose();
@@ -93,6 +110,8 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
   }
 
   Future<void> loadPdfList() async {
+    if (!mounted) return;
+
     try {
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final Map<String, dynamic> manifestMap = json.decode(manifestContent);
@@ -129,6 +148,8 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
           )
           .toList();
 
+      if (!mounted) return;
+
       setState(() {
         pdfFiles['tahap_1_legalitas'] = tahap1Legalitas
             .map((path) => {'name': path.split('/').last, 'path': path})
@@ -148,14 +169,26 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
       if (kDebugMode) {
         print('Error loading PDF list: $e');
       }
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
+
+      // Show error snackbar
+      Get.snackbar(
+        'Error',
+        'Gagal memuat daftar PDF: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
   Future<void> openPdf(String fileName, String title, String assetPath) async {
-    Navigator.of(context).push(
+    if (!mounted) return;
+
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PdfViewerPage(assetPath: assetPath, title: title),
       ),
@@ -424,6 +457,7 @@ class _PdfFileIcon extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
+                fontSize: 10,
                 letterSpacing: 1,
               ),
             ),
@@ -447,16 +481,39 @@ class PdfViewerPage extends StatefulWidget {
 }
 
 class _PdfViewerPageState extends State<PdfViewerPage> {
-  final PdfViewerController _pdfViewerController = PdfViewerController();
+  late PdfViewerController _pdfViewerController;
   final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
 
   int _currentPage = 1;
   int _totalPages = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // PERBAIKAN: Initialize controller in initState
+    _pdfViewerController = PdfViewerController();
+  }
 
   @override
   void dispose() {
-    _pdfViewerController.dispose();
+    // PERBAIKAN: Safe dispose
+    try {
+      _pdfViewerController.dispose();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error disposing PDF controller: $e');
+      }
+    }
     super.dispose();
+  }
+
+  void _updateZoom(double delta) {
+    if (!mounted) return;
+    setState(() {
+      _pdfViewerController.zoomLevel = (_pdfViewerController.zoomLevel + delta)
+          .clamp(0.5, 3.0);
+    });
   }
 
   @override
@@ -468,7 +525,11 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+          },
         ),
         title: Text(
           widget.title.replaceAll('.pdf', '').toUpperCase(),
@@ -481,31 +542,32 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.zoom_out, color: Colors.white),
-            onPressed: () {
-              _pdfViewerController.zoomLevel =
-                  (_pdfViewerController.zoomLevel - 0.25).clamp(0.5, 3.0);
-            },
+            onPressed: () => _updateZoom(-0.25),
             tooltip: 'Zoom Out',
           ),
           Center(
-            child: Text(
-              '${(_pdfViewerController.zoomLevel * 100).toInt()}%',
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                '${(_pdfViewerController.zoomLevel * 100).toInt()}%',
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.zoom_in, color: Colors.white),
-            onPressed: () {
-              _pdfViewerController.zoomLevel =
-                  (_pdfViewerController.zoomLevel + 0.25).clamp(0.5, 3.0);
-            },
+            onPressed: () => _updateZoom(0.25),
             tooltip: 'Zoom In',
           ),
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.chevron_left, color: Colors.white),
             onPressed: _currentPage > 1
-                ? () => _pdfViewerController.previousPage()
+                ? () {
+                    if (mounted) {
+                      _pdfViewerController.previousPage();
+                    }
+                  }
                 : null,
             tooltip: 'Previous Page',
           ),
@@ -520,50 +582,78 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           IconButton(
             icon: const Icon(Icons.chevron_right, color: Colors.white),
             onPressed: _currentPage < _totalPages
-                ? () => _pdfViewerController.nextPage()
+                ? () {
+                    if (mounted) {
+                      _pdfViewerController.nextPage();
+                    }
+                  }
                 : null,
             tooltip: 'Next Page',
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: SfPdfViewer.asset(
-        widget.assetPath,
-        key: _pdfViewerKey,
-        controller: _pdfViewerController,
-        canShowScrollHead: false,
-        canShowScrollStatus: false,
-        enableDoubleTapZooming: true,
-        enableTextSelection: true,
-        pageLayoutMode: PdfPageLayoutMode.continuous,
-        onDocumentLoaded: (PdfDocumentLoadedDetails details) {
-          setState(() {
-            _totalPages = details.document.pages.count;
-          });
-        },
-        onPageChanged: (PdfPageChangedDetails details) {
-          setState(() {
-            _currentPage = details.newPageNumber;
-          });
-        },
-        onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
-          if (kDebugMode) {
-            print('PDF Load Failed: ${details.error}');
-            print('Description: ${details.description}');
-          }
+      body: Stack(
+        children: [
+          SfPdfViewer.asset(
+            widget.assetPath,
+            key: _pdfViewerKey,
+            controller: _pdfViewerController,
+            canShowScrollHead: false,
+            canShowScrollStatus: false,
+            enableDoubleTapZooming: true,
+            enableTextSelection: true,
+            pageLayoutMode: PdfPageLayoutMode.continuous,
+            onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+              if (!mounted) return;
+              setState(() {
+                _totalPages = details.document.pages.count;
+                _isLoading = false;
+              });
+            },
+            onPageChanged: (PdfPageChangedDetails details) {
+              if (!mounted) return;
+              setState(() {
+                _currentPage = details.newPageNumber;
+              });
+            },
+            onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+              if (kDebugMode) {
+                print('PDF Load Failed: ${details.error}');
+                print('Description: ${details.description}');
+              }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to load PDF: ${details.description}'),
-              backgroundColor: Colors.red,
-              action: SnackBarAction(
-                label: 'Close',
-                textColor: Colors.white,
-                onPressed: () => Navigator.of(context).pop(),
+              if (!mounted) return;
+
+              setState(() {
+                _isLoading = false;
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to load PDF: ${details.description}'),
+                  backgroundColor: Colors.red,
+                  action: SnackBarAction(
+                    label: 'Close',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
               ),
             ),
-          );
-        },
+        ],
       ),
     );
   }

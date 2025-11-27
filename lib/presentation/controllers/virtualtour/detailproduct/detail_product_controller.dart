@@ -1,16 +1,10 @@
 import 'package:carousel_slider/carousel_controller.dart' as cs;
 import 'package:dago_valley_explore/data/models/house_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_player_win/video_player_win.dart';
-
-// Type aliases for video player
-typedef VideoPlayerController = WinVideoPlayerController;
-typedef VideoPlayerValue = WinVideoPlayerValue;
+import 'package:video_player/video_player.dart';
 
 class DetailProductController extends GetxController {
   // Carousel controller
@@ -41,19 +35,6 @@ class DetailProductController extends GetxController {
   final RxMap<int, bool> videoPlaying = <int, bool>{}.obs;
   final RxMap<int, String?> videoErrors = <int, String?>{}.obs;
 
-  // Track copied video files
-  final List<File> _tempVideoFiles = [];
-
-  // Check if platform supports video
-  bool get supportsVideo {
-    if (kIsWeb) return false;
-    try {
-      return Platform.isWindows;
-    } catch (e) {
-      return false;
-    }
-  }
-
   @override
   void onInit() {
     super.onInit();
@@ -69,10 +50,10 @@ class DetailProductController extends GetxController {
       print('   Images: ${images.length}');
       print('   Videos: ${videos.length}');
 
-      // Initialize videos if available and on Windows
-      if (videos.isNotEmpty && supportsVideo) {
+      // Initialize videos if available
+      if (videos.isNotEmpty) {
         // Delay to avoid startup conflicts
-        Future.delayed(const Duration(milliseconds: 800), () {
+        Future.delayed(const Duration(milliseconds: 500), () {
           if (!isClosed) {
             _initializeVideoPlayers();
           }
@@ -91,54 +72,13 @@ class DetailProductController extends GetxController {
     }
   }
 
-  // Copy asset to temp directory
-  Future<File?> _copyAssetToTemp(String assetPath) async {
-    try {
-      print('📦 Copying video asset: $assetPath');
-
-      final exists = await _checkAssetExists(assetPath);
-      if (!exists) {
-        print('❌ Asset not found: $assetPath');
-        return null;
-      }
-
-      final tempDir = await getTemporaryDirectory();
-      final fileName = assetPath.split('/').last;
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final filePath =
-          '${tempDir.path}${Platform.pathSeparator}video_$timestamp\_$fileName';
-
-      print('   Loading asset bytes...');
-      final byteData = await rootBundle.load(assetPath);
-      final bytes = byteData.buffer.asUint8List(
-        byteData.offsetInBytes,
-        byteData.lengthInBytes,
-      );
-
-      print('   Writing ${bytes.length} bytes to temp file...');
-      final file = File(filePath);
-      await file.writeAsBytes(bytes, flush: true);
-
-      if (!await file.exists() || await file.length() == 0) {
-        print('❌ Failed to create temp file');
-        return null;
-      }
-
-      print('✅ Video copied to: $filePath');
-      print('   File size: ${await file.length()} bytes');
-
-      _tempVideoFiles.add(file);
-      return file;
-    } catch (e, stackTrace) {
-      print('❌ Error copying asset: $e');
-      print('   Stack: $stackTrace');
-      return null;
-    }
-  }
-
-  // Initialize video players
+  // Initialize video players with asset
   void _initializeVideoPlayers() async {
     print('\n🎬 Initializing ${videos.length} video(s)...');
+    print('   Platform: ${Platform.operatingSystem}');
+    print(
+      '   Is Tizen: ${Platform.isLinux && Platform.operatingSystem == "linux"} (check for Tizen)',
+    );
 
     for (int i = 0; i < videos.length; i++) {
       final videoIndex = images.length + i;
@@ -151,61 +91,76 @@ class DetailProductController extends GetxController {
 
         print('\n📹 Video $i: $videoPath');
 
-        // Copy asset to temp file
-        final tempFile = await _copyAssetToTemp(videoPath);
-        if (tempFile == null) {
-          throw Exception('Failed to copy video to temp directory');
+        // Check if asset exists
+        final exists = await _checkAssetExists(videoPath);
+        if (!exists) {
+          throw Exception('Asset not found: $videoPath');
         }
 
-        // Create controller from file
-        print('   Creating WinVideoPlayerController...');
-        final controller = VideoPlayerController.file(tempFile);
+        // Create controller from asset
+        print('   Creating VideoPlayerController from asset...');
+        final controller = VideoPlayerController.asset(videoPath);
         videoControllers[videoIndex] = controller;
 
-        // Initialize with timeout
+        // PERBAIKAN: Set properties SEBELUM initialize
+        controller.setLooping(true);
+        controller.setVolume(1.0);
+
+        // Initialize
         print('   Initializing controller...');
         await controller
             .initialize()
-            .timeout(
-              const Duration(seconds: 30),
-              onTimeout: () {
-                throw Exception('Video initialization timeout');
-              },
-            )
             .then((_) {
               if (!isClosed && controller.value.isInitialized) {
-                print('   Setting up video properties...');
+                print('   Video initialized successfully!');
+                print('   Duration: ${controller.value.duration}');
+                print('   Size: ${controller.value.size}');
+                print('   Aspect Ratio: ${controller.value.aspectRatio}');
 
-                // Set looping
-                controller.setLooping(true);
-                controller.setVolume(1.0);
-
+                // PENTING: Trigger update observable
                 videoInitialized[videoIndex] = true;
+                videoInitialized.refresh(); // Force refresh
 
-                // Add listener for playback state
+                // Add listener AFTER initialization
                 controller.addListener(() {
                   if (!isClosed && videoControllers[videoIndex] != null) {
-                    final isPlaying = controller.value.isPlaying;
-                    if (videoPlaying[videoIndex] != isPlaying) {
-                      videoPlaying[videoIndex] = isPlaying;
+                    final isCurrentlyPlaying = controller.value.isPlaying;
+                    if (videoPlaying[videoIndex] != isCurrentlyPlaying) {
+                      videoPlaying[videoIndex] = isCurrentlyPlaying;
                     }
 
-                    // Auto-loop if completed
-                    if (controller.value.isCompleted) {
-                      print('   Video completed, restarting...');
-                      controller.seekTo(Duration.zero);
-                      controller.play();
+                    // Debug info
+                    if (controller.value.hasError) {
+                      print(
+                        '❌ Video error at index $videoIndex: ${controller.value.errorDescription}',
+                      );
+                      videoErrors[videoIndex] =
+                          controller.value.errorDescription;
                     }
                   }
                 });
 
-                print('✅ Video initialized successfully!');
-                print('   Duration: ${controller.value.duration}');
-                print('   Size: ${controller.value.size}');
-                print('   Aspect Ratio: ${controller.value.aspectRatio}');
+                // PENTING: Seek ke awal untuk memastikan frame pertama dimuat
+                controller.seekTo(Duration.zero).then((_) {
+                  // TIZEN FIX: Play and pause immediately untuk render frame pertama
+                  if (Platform.isLinux) {
+                    print('   🔧 Tizen: Triggering first frame render...');
+                    controller.play().then((_) {
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (!isClosed && controller.value.isPlaying) {
+                          controller.pause();
+                          videoPlaying[videoIndex] = false;
+                          print('   ✅ First frame rendered!');
+                        }
+                      });
+                    });
+                  }
+                });
+
+                print('✅ Video ready to play!');
               }
             })
-            .catchError((error, stackTrace) {
+            .catchError((error) {
               if (!isClosed) {
                 final errorMsg = 'Init error: $error';
                 videoErrors[videoIndex] = errorMsg;
@@ -223,7 +178,7 @@ class DetailProductController extends GetxController {
             });
 
         // Delay between initializations
-        await Future.delayed(const Duration(milliseconds: 300));
+        await Future.delayed(const Duration(milliseconds: 500));
       } catch (e, stackTrace) {
         if (!isClosed) {
           final errorMsg = 'Exception: $e';
@@ -255,15 +210,35 @@ class DetailProductController extends GetxController {
       if (controller != null &&
           videoInitialized[index] == true &&
           controller.value.isInitialized) {
+        print('🎬 Toggling playback for index $index');
+        print('   Current state - Playing: ${controller.value.isPlaying}');
+        print('   Position: ${controller.value.position}');
+        print('   Duration: ${controller.value.duration}');
+        print('   Size: ${controller.value.size}');
+        print('   Aspect Ratio: ${controller.value.aspectRatio}');
+        print('   Has error: ${controller.value.hasError}');
+
         if (controller.value.isPlaying) {
           controller.pause();
+          videoPlaying[index] = false; // Explicit update
           print('⏸️ Video paused at index $index');
         } else {
           controller.play();
+          videoPlaying[index] = true; // Explicit update
           print('▶️ Video playing at index $index');
         }
+
+        // Force refresh observable
+        videoPlaying.refresh();
       } else {
-        print('⚠️ Cannot toggle video at index $index - not initialized');
+        print('⚠️ Cannot toggle video at index $index');
+        print('   Controller null: ${controller == null}');
+        print('   Initialized: ${videoInitialized[index]}');
+        if (controller != null) {
+          print('   Is initialized: ${controller.value.isInitialized}');
+          print('   Has error: ${controller.value.hasError}');
+          print('   Error description: ${controller.value.errorDescription}');
+        }
       }
     } catch (e) {
       print('❌ Error toggling playback: $e');
@@ -279,6 +254,7 @@ class DetailProductController extends GetxController {
             controller.value.isPlaying) {
           try {
             controller.pause();
+            print('⏸️ Paused video at index $index');
           } catch (e) {
             print('Error pausing video $index: $e');
           }
@@ -298,29 +274,6 @@ class DetailProductController extends GetxController {
       }
     } catch (e) {
       print('❌ Error seeking: $e');
-    }
-  }
-
-  // Cleanup temp files
-  Future<void> _cleanupTempFiles() async {
-    if (_tempVideoFiles.isEmpty) return;
-
-    try {
-      print('🧹 Cleaning ${_tempVideoFiles.length} temp file(s)...');
-      for (final file in _tempVideoFiles) {
-        try {
-          if (await file.exists()) {
-            await file.delete();
-            print('   Deleted: ${file.path}');
-          }
-        } catch (e) {
-          print('   Delete failed: ${file.path}');
-        }
-      }
-      _tempVideoFiles.clear();
-      print('✅ Cleanup complete');
-    } catch (e) {
-      print('❌ Cleanup error: $e');
     }
   }
 
@@ -347,9 +300,6 @@ class DetailProductController extends GetxController {
       }
       videoControllers.clear();
 
-      // Cleanup temp files
-      _cleanupTempFiles();
-
       print('✅ All controllers disposed\n');
     } catch (e) {
       print('❌ onClose error: $e');
@@ -368,6 +318,40 @@ class DetailProductController extends GetxController {
   void setCurrentIndex(int index) {
     pauseAllVideos();
     currentIndex.value = index;
+
+    // Auto play video saat carousel menuju ke video item
+    if (isVideo(index)) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        final controller = videoControllers[index];
+        if (controller != null &&
+            videoInitialized[index] == true &&
+            controller.value.isInitialized) {
+          print('🎬 Auto-playing video at index $index');
+          print('   Controller ready: ${controller.value.isInitialized}');
+          print('   Size: ${controller.value.size}');
+          print('   Duration: ${controller.value.duration}');
+
+          if (!controller.value.isPlaying) {
+            // For Tizen: ensure we're at the beginning
+            controller.seekTo(Duration.zero).then((_) {
+              controller.play();
+              videoPlaying[index] = true;
+              videoPlaying.refresh();
+              print('   ✅ Video started playing');
+            });
+          }
+        } else {
+          print('⚠️ Video not ready at index $index');
+          if (controller != null) {
+            print('   Initialized value: ${controller.value.isInitialized}');
+            print('   Has error: ${controller.value.hasError}');
+            if (controller.value.hasError) {
+              print('   Error: ${controller.value.errorDescription}');
+            }
+          }
+        }
+      });
+    }
   }
 
   // Go to page

@@ -3,11 +3,8 @@ import 'package:dago_valley_explore/presentation/controllers/virtualtour/detailp
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:get/get.dart';
-import 'package:video_player_win/video_player_win.dart';
+import 'package:video_player/video_player.dart';
 import 'dart:ui';
-
-// Type alias
-typedef VideoPlayer = WinVideoPlayer;
 
 class ProductDetailPage extends GetView<DetailProductController> {
   const ProductDetailPage({Key? key}) : super(key: key);
@@ -342,16 +339,16 @@ class ProductDetailPage extends GetView<DetailProductController> {
                     color: Colors.black.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.zoom_in_outlined,
                         color: Colors.white,
                         size: 20,
                       ),
-                      const SizedBox(width: 8),
-                      const Text(
+                      SizedBox(width: 8),
+                      Text(
                         'Klik untuk zoom',
                         style: TextStyle(
                           color: Colors.white,
@@ -456,10 +453,17 @@ class ProductDetailPage extends GetView<DetailProductController> {
         );
       }
 
-      // Rename variable untuk menghindari konflik
       final videoController = controller.getVideoController(index);
-      if (videoController == null) {
-        return Container(color: Colors.black);
+      if (videoController == null || !videoController.value.isInitialized) {
+        return Container(
+          color: Colors.black,
+          child: const Center(
+            child: Text(
+              'Video controller not ready',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        );
       }
 
       return GestureDetector(
@@ -471,12 +475,25 @@ class ProductDetailPage extends GetView<DetailProductController> {
           child: Stack(
             fit: StackFit.expand,
             children: [
+              // Video Player dengan handling khusus untuk Tizen
               Center(
-                child: AspectRatio(
-                  aspectRatio: videoController.value.aspectRatio,
-                  child: WinVideoPlayer(videoController),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final aspectRatio = videoController.value.aspectRatio > 0
+                        ? videoController.value.aspectRatio
+                        : 16 / 9;
+
+                    return AspectRatio(
+                      aspectRatio: aspectRatio,
+                      child: Container(
+                        color: Colors.black,
+                        child: VideoPlayer(videoController),
+                      ),
+                    );
+                  },
                 ),
               ),
+              // Play overlay
               if (!isPlaying)
                 Center(
                   child: Container(
@@ -500,14 +517,14 @@ class ProductDetailPage extends GetView<DetailProductController> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.7),
-                        Colors.transparent,
-                      ],
-                    ),
+                    // gradient: LinearGradient(
+                    //   begin: Alignment.bottomCenter,
+                    //   end: Alignment.topCenter,
+                    //   colors: [
+                    //     Colors.black.withOpacity(0.7),
+                    //     Colors.transparent,
+                    //   ],
+                    // ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -522,7 +539,9 @@ class ProductDetailPage extends GetView<DetailProductController> {
                               .toDouble();
 
                           return Slider(
-                            value: duration > 0 ? position : 0,
+                            value: duration > 0
+                                ? position.clamp(0, duration)
+                                : 0,
                             max: duration > 0 ? duration : 1,
                             onChanged: (newValue) {
                               controller.seekVideo(
@@ -906,8 +925,13 @@ class ProductDetailPage extends GetView<DetailProductController> {
           children: [
             Center(
               child: AspectRatio(
-                aspectRatio: videoController.value.aspectRatio,
-                child: VideoPlayer(videoController),
+                aspectRatio: videoController.value.aspectRatio > 0
+                    ? videoController.value.aspectRatio
+                    : 16 / 9,
+                child: Container(
+                  color: Colors.black,
+                  child: VideoPlayer(videoController),
+                ),
               ),
             ),
             if (!isPlaying)

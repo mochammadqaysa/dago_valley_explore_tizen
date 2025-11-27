@@ -4,7 +4,7 @@ import 'package:dago_valley_explore/presentation/controllers/event/event_control
 import 'package:dago_valley_explore/presentation/controllers/locale/locale_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:video_player_win/video_player_win.dart';
+import 'package:video_player/video_player.dart'; // Ganti dari video_player_win
 import 'package:carousel_slider/carousel_slider.dart' as cs;
 
 class EventGalleryPage extends GetView<EventController> {
@@ -14,74 +14,83 @@ class EventGalleryPage extends GetView<EventController> {
   Widget build(BuildContext context) {
     final localeController = Get.find<LocaleController>();
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with back button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => Get.back(),
-                      borderRadius: BorderRadius.circular(30),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 1,
+    return WillPopScope(
+      onWillPop: () async {
+        controller.pauseAllVideos();
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header with back button
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          controller.pauseAllVideos();
+                          Get.back();
+                        },
+                        borderRadius: BorderRadius.circular(30),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
                           ),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                          size: 24,
+                          child: const Icon(
+                            Icons.arrow_back_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          controller.currentEvent.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            controller.currentEvent.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Galeri',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 14,
+                          Text(
+                            'Galeri',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // Event Info Section (di atas Tab Bar)
-            _buildEventInfo(localeController),
+              // Event Info Section
+              _buildEventInfo(localeController),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Gallery Content
-            Expanded(child: _buildGalleryContent()),
-          ],
+              // Gallery Content
+              Expanded(child: _buildGalleryContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -207,6 +216,8 @@ class EventGalleryPage extends GetView<EventController> {
   Widget _buildGalleryContent() {
     final images = controller.currentEvent.images;
     final videos = controller.currentEvent.videos;
+    debugPrint('Total image items: ${images.length}');
+    debugPrint('Total video items: ${videos.length}');
 
     final imageFiles = images
         .where((img) => _isImageFile(img.filePath))
@@ -214,6 +225,7 @@ class EventGalleryPage extends GetView<EventController> {
     final videoFiles = videos
         .where((img) => _isVideoFile(img.filePath))
         .toList();
+
     debugPrint(
       'Image files count: ${imageFiles.length}, Video files count: ${videoFiles.length}',
     );
@@ -231,7 +243,7 @@ class EventGalleryPage extends GetView<EventController> {
       length: 2,
       child: Column(
         children: [
-          // Modern Tab Bar with Segmented Control Style
+          // Tab Bar
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.all(4),
@@ -453,8 +465,6 @@ class EventGalleryPage extends GetView<EventController> {
       );
     }
 
-    final storage = Get.find<LocalStorageService>();
-
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -467,157 +477,105 @@ class EventGalleryPage extends GetView<EventController> {
       itemBuilder: (context, index) {
         final videoUrl = videoFiles[index].filePath;
 
-        return FutureBuilder<File?>(
-          future: storage.getLocalVideo(videoUrl),
-          builder: (context, videoSnapshot) {
-            return GestureDetector(
-              onTap: () => _openVideoPlayer(videoUrl),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Video Thumbnail using WinVideoPlayer
-                    if (videoSnapshot.hasData && videoSnapshot.data != null)
-                      _VideoThumbnailWidget(videoFile: videoSnapshot.data!)
-                    else if (videoSnapshot.connectionState ==
-                        ConnectionState.waiting)
-                      Container(
-                        color: Colors.grey[900],
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                      )
-                    else
-                      Container(
-                        color: Colors.grey[900],
-                        child: const Icon(
-                          Icons.video_library_rounded,
-                          color: Colors.white54,
-                          size: 48,
-                        ),
-                      ),
-
-                    // Dark gradient overlay
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.4),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Play button overlay
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.8),
-                            width: 2.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 36,
-                        ),
-                      ),
-                    ),
-
-                    // Video badge (bottom right)
-                    Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.75),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.videocam_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Video',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+        return GestureDetector(
+          onTap: () => _openVideoPlayer(videoUrl),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Simple dark background instead of thumbnail
+                Container(
+                  color: Colors.grey[900],
+                  child: const Icon(
+                    Icons.video_library_rounded,
+                    color: Colors.white54,
+                    size: 48,
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
-  Widget _buildMediaImage(String imageUrl, {BoxFit fit = BoxFit.cover}) {
-    final storage = Get.find<LocalStorageService>();
+                // Dark gradient overlay
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.4),
+                      ],
+                    ),
+                  ),
+                ),
 
-    return FutureBuilder<File?>(
-      future: storage.getLocalImage(imageUrl),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            color: Colors.grey[900],
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
+                // Play button overlay
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.8),
+                        width: 2.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  ),
+                ),
+
+                // Video badge
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.75),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.videocam_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Video',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-        }
-
-        final file = snapshot.data;
-        if (file != null && file.existsSync()) {
-          return Image.file(file, fit: fit, gaplessPlayback: true);
-        }
-
-        return Container(
-          color: Colors.grey[900],
-          child: const Center(
-            child: Icon(Icons.broken_image, color: Colors.white54),
           ),
         );
       },
@@ -656,71 +614,9 @@ class EventGalleryPage extends GetView<EventController> {
   }
 
   bool _isVideoFile(String url) {
-    final videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv'];
+    final videoExtensions = ['.mp4', '. mov', '.avi', '.mkv', '.webm', '.flv'];
     final lowerUrl = url.toLowerCase();
     return videoExtensions.any((ext) => lowerUrl.endsWith(ext));
-  }
-}
-
-// ==================== Video Thumbnail Widget ====================
-class _VideoThumbnailWidget extends StatefulWidget {
-  final File videoFile;
-
-  const _VideoThumbnailWidget({required this.videoFile});
-
-  @override
-  State<_VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
-}
-
-class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
-  WinVideoPlayerController? _controller;
-  bool _initialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initController();
-  }
-
-  Future<void> _initController() async {
-    try {
-      _controller = WinVideoPlayerController.file(widget.videoFile);
-      await _controller!.initialize();
-      await _controller!.seekTo(const Duration(seconds: 1));
-      await _controller!.pause();
-      if (mounted) {
-        setState(() => _initialized = true);
-      }
-    } catch (e) {
-      debugPrint('Error initializing video thumbnail: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_initialized || _controller == null) {
-      return Container(
-        color: Colors.grey[900],
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-        ),
-      );
-    }
-
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: _controller!.value.size.width,
-        height: _controller!.value.size.height,
-        child: WinVideoPlayer(_controller!),
-      ),
-    );
   }
 }
 
@@ -863,10 +759,10 @@ class _VideoPlayerPage extends StatefulWidget {
 }
 
 class _VideoPlayerPageState extends State<_VideoPlayerPage> {
-  WinVideoPlayerController? _controller;
+  VideoPlayerController? _controller;
   bool _isLoading = true;
   bool _hasError = false;
-  bool _isMuted = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -880,14 +776,31 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
       final videoFile = await storage.getLocalVideo(widget.videoUrl);
 
       if (videoFile != null && videoFile.existsSync()) {
-        _controller = WinVideoPlayerController.file(videoFile);
+        _controller = VideoPlayerController.file(videoFile);
+
+        _controller!.setLooping(true);
+        _controller!.setVolume(1.0);
+
         await _controller!.initialize();
-        await _controller!.play();
-        setState(() => _isLoading = false);
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+
+          // Add listener for state changes
+          _controller!.addListener(() {
+            if (mounted) {
+              setState(() {});
+            }
+          });
+
+          // Auto play
+          await _controller!.play();
+        }
       } else {
         setState(() {
           _isLoading = false;
           _hasError = true;
+          _errorMessage = 'File video tidak ditemukan';
         });
       }
     } catch (e) {
@@ -895,25 +808,25 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
       setState(() {
         _isLoading = false;
         _hasError = true;
-      });
-    }
-  }
-
-  void _toggleMute() {
-    if (_controller != null) {
-      setState(() {
-        _isMuted = !_isMuted;
-        _controller!.setVolume(_isMuted ? 0.0 : 1.0);
+        _errorMessage = 'Gagal memuat video: $e';
       });
     }
   }
 
   void _togglePlayPause() {
-    if (_controller != null) {
+    if (_controller != null && _controller!.value.isInitialized) {
       setState(() {
         _controller!.value.isPlaying
             ? _controller!.pause()
             : _controller!.play();
+      });
+    }
+  }
+
+  void _toggleMute() {
+    if (_controller != null && _controller!.value.isInitialized) {
+      setState(() {
+        _controller!.setVolume(_controller!.value.volume > 0 ? 0.0 : 1.0);
       });
     }
   }
@@ -937,22 +850,24 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
+          // Video Player
           Center(
             child: _isLoading
                 ? const CircularProgressIndicator(color: Colors.white)
                 : _hasError
-                ? const Column(
+                ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.error_outline,
                         color: Colors.white54,
                         size: 64,
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
-                        'Video tidak dapat diputar',
-                        style: TextStyle(color: Colors.white54),
+                        _errorMessage ?? 'Video tidak dapat diputar',
+                        style: const TextStyle(color: Colors.white54),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   )
@@ -960,12 +875,36 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
                 ? GestureDetector(
                     onTap: _togglePlayPause,
                     child: AspectRatio(
-                      aspectRatio: _controller!.value.aspectRatio,
-                      child: WinVideoPlayer(_controller!),
+                      aspectRatio: _controller!.value.aspectRatio > 0
+                          ? _controller!.value.aspectRatio
+                          : 16 / 9,
+                      child: VideoPlayer(_controller!),
                     ),
                   )
                 : const SizedBox.shrink(),
           ),
+
+          // Play/Pause Overlay
+          if (_controller != null &&
+              _controller!.value.isInitialized &&
+              !_controller!.value.isPlaying)
+            Center(
+              child: GestureDetector(
+                onTap: _togglePlayPause,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow,
+                    color: Colors.white,
+                    size: 64,
+                  ),
+                ),
+              ),
+            ),
 
           // Close button
           SafeArea(
@@ -1001,54 +940,53 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Progress slider
-                    ValueListenableBuilder(
-                      valueListenable: _controller!,
-                      builder: (context, value, child) {
-                        final position = value.position.inMilliseconds
-                            .toDouble();
-                        final duration = value.duration.inMilliseconds
-                            .toDouble();
-
-                        return Slider(
-                          value: duration > 0 ? position : 0,
-                          max: duration > 0 ? duration : 1,
-                          onChanged: (newValue) {
-                            _controller!.seekTo(
-                              Duration(milliseconds: newValue.toInt()),
-                            );
-                          },
-                          activeColor: Colors.white,
-                          inactiveColor: Colors.white38,
+                    Slider(
+                      value: _controller!.value.position.inMilliseconds
+                          .toDouble()
+                          .clamp(
+                            0.0,
+                            _controller!.value.duration.inMilliseconds
+                                .toDouble(),
+                          ),
+                      max:
+                          _controller!.value.duration.inMilliseconds
+                                  .toDouble() >
+                              0
+                          ? _controller!.value.duration.inMilliseconds
+                                .toDouble()
+                          : 1,
+                      onChanged: (value) {
+                        _controller!.seekTo(
+                          Duration(milliseconds: value.toInt()),
                         );
                       },
+                      activeColor: Colors.white,
+                      inactiveColor: Colors.white38,
                     ),
 
                     // Control buttons
                     Row(
                       children: [
-                        // Play/Pause button
+                        // Play/Pause
                         IconButton(
-                          icon: ValueListenableBuilder(
-                            valueListenable: _controller!,
-                            builder: (context, value, child) {
-                              return Icon(
-                                value.isPlaying
-                                    ? Icons.pause
-                                    : Icons.play_arrow,
-                                color: Colors.white,
-                                size: 28,
-                              );
-                            },
+                          icon: Icon(
+                            _controller!.value.isPlaying
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            color: Colors.white,
+                            size: 28,
                           ),
                           onPressed: _togglePlayPause,
                         ),
 
                         const SizedBox(width: 8),
 
-                        // Mute/Unmute button
+                        // Mute/Unmute
                         IconButton(
                           icon: Icon(
-                            _isMuted ? Icons.volume_off : Icons.volume_up,
+                            _controller!.value.volume > 0
+                                ? Icons.volume_up
+                                : Icons.volume_off,
                             color: Colors.white,
                             size: 28,
                           ),
@@ -1058,53 +996,18 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
                         const Spacer(),
 
                         // Time display
-                        ValueListenableBuilder(
-                          valueListenable: _controller!,
-                          builder: (context, value, child) {
-                            final position = value.position;
-                            final duration = value.duration;
-                            return Text(
-                              '${_formatDuration(position)} / ${_formatDuration(duration)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
+                        Text(
+                          '${_formatDuration(_controller!.value.position)} / ${_formatDuration(_controller!.value.duration)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
-              ),
-            ),
-
-          // Play/Pause overlay (center)
-          if (_controller != null && _controller!.value.isInitialized)
-            Center(
-              child: ValueListenableBuilder(
-                valueListenable: _controller!,
-                builder: (context, value, child) {
-                  if (value.isPlaying) {
-                    return const SizedBox.shrink();
-                  }
-                  return GestureDetector(
-                    onTap: _togglePlayPause,
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow,
-                        color: Colors.white,
-                        size: 64,
-                      ),
-                    ),
-                  );
-                },
               ),
             ),
         ],

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:dago_valley_explore/app/config/app_colors.dart';
 import 'package:dago_valley_explore/app/services/local_storage.dart';
 import 'package:dago_valley_explore/presentation/controllers/qrcode/qrcode_binding.dart';
@@ -25,8 +24,7 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
   late TabController _tahap1TabController;
   late TabController _tahap2TabController;
 
-  // Data untuk setiap kategori
-  Map<String, List<String>> pdfFiles = {
+  Map<String, List<Map<String, String>>> pdfFiles = {
     'tahap_1_legalitas': [],
     'tahap_1_perizinan': [],
     'tahap_2_legalitas': [],
@@ -42,7 +40,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
     _tahap1TabController = TabController(length: 2, vsync: this);
     _tahap2TabController = TabController(length: 2, vsync: this);
 
-    // Listen to main tab changes to update sub tab controller
     _mainTabController.addListener(() {
       if (_mainTabController.indexIsChanging) {
         setState(() {});
@@ -53,17 +50,12 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
   }
 
   void _showQRCodeModal([String? url]) {
-    // If caller didn't pass URL, try get from local storage (Brochure list)
     if (url == null || url.isEmpty) {
       try {
         final storage = Get.find<LocalStorageService>();
-        // Assuming LocalStorageService has a 'brochures' getter returning List<Brochure>?
-        // Adjust field name if your implementation uses a different property.
         final brochures = storage.brochures;
-        print('Fetched brochures from local storage: $brochures');
         if (brochures != null && brochures.isNotEmpty) {
           final first = brochures.first;
-          // Brochure entity should have imageUrl property; adjust if different
           url = (first.imageUrl ?? '').toString();
         }
       } catch (e) {
@@ -81,7 +73,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
       return;
     }
 
-    // Navigate to QRCodePage and pass the url via arguments; binding will create controller with this arg
     Get.to(
       () => const QRCodePage(),
       binding: QrCodeBinding(),
@@ -106,7 +97,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final Map<String, dynamic> manifestMap = json.decode(manifestContent);
 
-      // Load Tahap 1 - Legalitas
       final tahap1Legalitas = manifestMap.keys
           .where(
             (String key) =>
@@ -115,7 +105,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
           )
           .toList();
 
-      // Load Tahap 1 - Perizinan
       final tahap1Perizinan = manifestMap.keys
           .where(
             (String key) =>
@@ -124,7 +113,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
           )
           .toList();
 
-      // Load Tahap 2 - Legalitas
       final tahap2Legalitas = manifestMap.keys
           .where(
             (String key) =>
@@ -133,7 +121,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
           )
           .toList();
 
-      // Load Tahap 2 - Perizinan
       final tahap2Perizinan = manifestMap.keys
           .where(
             (String key) =>
@@ -144,16 +131,16 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
 
       setState(() {
         pdfFiles['tahap_1_legalitas'] = tahap1Legalitas
-            .map((e) => e.split('/').last)
+            .map((path) => {'name': path.split('/').last, 'path': path})
             .toList();
         pdfFiles['tahap_1_perizinan'] = tahap1Perizinan
-            .map((e) => e.split('/').last)
+            .map((path) => {'name': path.split('/').last, 'path': path})
             .toList();
         pdfFiles['tahap_2_legalitas'] = tahap2Legalitas
-            .map((e) => e.split('/').last)
+            .map((path) => {'name': path.split('/').last, 'path': path})
             .toList();
         pdfFiles['tahap_2_perizinan'] = tahap2Perizinan
-            .map((e) => e.split('/').last)
+            .map((path) => {'name': path.split('/').last, 'path': path})
             .toList();
         isLoading = false;
       });
@@ -167,12 +154,10 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
     }
   }
 
-  Future<void> openPdf(String fileName, String title, String basePath) async {
-    Navigator.push(
-      context,
+  Future<void> openPdf(String fileName, String title, String assetPath) async {
+    Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            PdfViewerPage(assetPath: '$basePath/$fileName', title: title),
+        builder: (_) => PdfViewerPage(assetPath: assetPath, title: title),
       ),
     );
   }
@@ -192,8 +177,7 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
       final isDarkMode = themeController.themeMode == ThemeMode.dark;
       return Scaffold(
         floatingActionButton: FloatingActionButton(
-          onPressed: () =>
-              _showQRCodeModal(), // panggil tanpa arg -> ambil dari localstorage
+          onPressed: () => _showQRCodeModal(),
           backgroundColor: AppColors.primary,
           child: const Icon(Icons.file_open_rounded, color: Colors.white),
         ),
@@ -204,12 +188,10 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
               )
             : Column(
                 children: [
-                  // Combined TabBar Row (Tahap & Legalitas/Perizinan)
                   Container(
                     margin: const EdgeInsets.all(20),
                     child: Row(
                       children: [
-                        // Main TabBar (Tahap 1 / Tahap 2) with Outline
                         SizedBox(
                           width: 200,
                           child: Container(
@@ -247,7 +229,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
                           ),
                         ),
                         const SizedBox(width: 16),
-                        // Sub TabBar (Legalitas / Perizinan) with Outline
                         SizedBox(
                           width: 200,
                           child: Container(
@@ -287,19 +268,16 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
                       ],
                     ),
                   ),
-                  // TabBarView untuk Tahap 1 dan Tahap 2
                   Expanded(
                     child: TabBarView(
                       controller: _mainTabController,
                       children: [
-                        // Tahap 1 Content
                         _buildTahapContent(
                           isDarkMode,
                           isTV,
                           _tahap1TabController,
                           'tahap_1',
                         ),
-                        // Tahap 2 Content
                         _buildTahapContent(
                           isDarkMode,
                           isTV,
@@ -324,20 +302,8 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
     return TabBarView(
       controller: tabController,
       children: [
-        // Legalitas
-        _buildPdfGrid(
-          isDarkMode,
-          isTV,
-          pdfFiles['${tahap}_legalitas']!,
-          'assets/$tahap/legalitas',
-        ),
-        // Perizinan
-        _buildPdfGrid(
-          isDarkMode,
-          isTV,
-          pdfFiles['${tahap}_perizinan']!,
-          'assets/$tahap/perizinan',
-        ),
+        _buildPdfGrid(isDarkMode, isTV, pdfFiles['${tahap}_legalitas']!),
+        _buildPdfGrid(isDarkMode, isTV, pdfFiles['${tahap}_perizinan']!),
       ],
     );
   }
@@ -345,8 +311,7 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
   Widget _buildPdfGrid(
     bool isDarkMode,
     bool isTV,
-    List<String> files,
-    String basePath,
+    List<Map<String, String>> files,
   ) {
     final crossAxisCount = isTV ? 5 : 1;
 
@@ -383,9 +348,12 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
       ),
       itemCount: files.length,
       itemBuilder: (context, index) {
-        final fileName = files[index];
+        final file = files[index];
+        final fileName = file['name']!;
+        final filePath = file['path']!;
+
         return GestureDetector(
-          onTap: () => openPdf(fileName, fileName, basePath),
+          onTap: () => openPdf(fileName, fileName, filePath),
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: AnimatedContainer(
@@ -436,7 +404,6 @@ class _LicenseLegalDocumentPageState extends State<LicenseLegalDocumentPage>
   }
 }
 
-/// Widget ikon seperti berkas dengan tulisan "PDF"
 class _PdfFileIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -467,7 +434,7 @@ class _PdfFileIcon extends StatelessWidget {
   }
 }
 
-// PdfViewerPage tetap sama seperti kode asli Anda
+// Syncfusion PDF Viewer Page
 class PdfViewerPage extends StatefulWidget {
   final String assetPath;
   final String title;
@@ -481,608 +448,122 @@ class PdfViewerPage extends StatefulWidget {
 
 class _PdfViewerPageState extends State<PdfViewerPage> {
   final PdfViewerController _pdfViewerController = PdfViewerController();
-  bool _isLoading = true;
-  String? _error;
+  final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
+
   int _currentPage = 1;
   int _totalPages = 0;
-  double _currentZoom = 1.0;
-  bool _showSidebar = true;
-  final TextEditingController _pageController = TextEditingController();
-  final ScrollController _thumbnailScrollController = ScrollController();
-  Uint8List? _pdfBytes;
-
-  final List<double> _zoomLevels = [
-    0.25,
-    0.33,
-    0.5,
-    0.67,
-    0.75,
-    0.8,
-    0.9,
-    1.0,
-    1.1,
-    1.25,
-    1.5,
-    1.75,
-    2.0,
-    2.5,
-    3.0,
-    4.0,
-    5.0,
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _initializePdf();
-    _pageController.text = '1';
-  }
-
-  Future<void> _initializePdf() async {
-    try {
-      if (kDebugMode) {
-        print('Loading PDF from: ${widget.assetPath}');
-      }
-
-      try {
-        final ByteData data = await rootBundle.load(widget.assetPath);
-        _pdfBytes = data.buffer.asUint8List();
-
-        if (kDebugMode) {
-          print('PDF bytes loaded successfully: ${_pdfBytes?.length} bytes');
-          if (_pdfBytes != null && _pdfBytes!.length > 4) {
-            final header = String.fromCharCodes(_pdfBytes!.sublist(0, 4));
-            print('PDF Header: $header (should be %PDF)');
-          }
-        }
-
-        if (_pdfBytes == null || _pdfBytes!.isEmpty) {
-          throw Exception('PDF file is empty');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error loading PDF bytes: $e');
-        }
-        setState(() {
-          _error =
-              'Gagal memuat file PDF: $e\n\nPastikan file PDF ada di folder yang sesuai';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
-          _applyZoom();
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error in _initializePdf: $e');
-      }
-      if (mounted) {
-        setState(() {
-          _error = 'Gagal memuat PDF: $e';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _applyZoom() {
-    try {
-      if (_currentZoom >= 1.0) {
-        _pdfViewerController.zoomLevel = _currentZoom;
-      } else {
-        _pdfViewerController.zoomLevel = 1.0;
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error applying zoom: $e');
-      }
-    }
-  }
-
-  void _onDocumentLoaded(PdfDocumentLoadedDetails details) {
-    if (kDebugMode) {
-      print(
-        'Document loaded successfully. Total pages: ${details.document.pages.count}',
-      );
-    }
-    setState(() {
-      _totalPages = details.document.pages.count;
-      _error = null;
-    });
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        _applyZoom();
-      }
-    });
-  }
-
-  void _onPageChanged(PdfPageChangedDetails details) {
-    setState(() {
-      _currentPage = details.newPageNumber;
-      _pageController.text = _currentPage.toString();
-    });
-  }
-
-  void _goToPage(int page) {
-    if (page > 0 && page <= _totalPages) {
-      _pdfViewerController.jumpToPage(page);
-    }
-  }
-
-  void _nextPage() {
-    if (_currentPage < _totalPages) {
-      _pdfViewerController.nextPage();
-    }
-  }
-
-  void _previousPage() {
-    if (_currentPage > 1) {
-      _pdfViewerController.previousPage();
-    }
-  }
-
-  void _zoomIn() {
-    final nextZoom = _zoomLevels.firstWhere(
-      (level) => level > _currentZoom + 0.01,
-      orElse: () => _zoomLevels.last,
-    );
-    setState(() {
-      _currentZoom = nextZoom;
-    });
-    _applyZoom();
-  }
-
-  void _zoomOut() {
-    final previousZoom = _zoomLevels.lastWhere(
-      (level) => level < _currentZoom - 0.01,
-      orElse: () => _zoomLevels.first,
-    );
-    setState(() {
-      _currentZoom = previousZoom;
-    });
-    _applyZoom();
-  }
-
-  void _setZoom(double zoom) {
-    setState(() {
-      _currentZoom = zoom;
-    });
-    _applyZoom();
-  }
-
-  void _resetZoom() {
-    setState(() {
-      _currentZoom = 1.0;
-    });
-    _applyZoom();
-  }
-
-  void _toggleSidebar() {
-    setState(() {
-      _showSidebar = !_showSidebar;
-    });
-  }
-
-  void _showZoomMenu() {
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        MediaQuery.of(context).size.width / 2,
-        100,
-        MediaQuery.of(context).size.width / 2,
-        0,
-      ),
-      color: const Color(0xFF3C4043),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      items: _zoomLevels.map((zoom) {
-        final isSelected = (_currentZoom - zoom).abs() < 0.01;
-        return PopupMenuItem(
-          value: zoom,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${(zoom * 100).toInt()}%',
-                style: TextStyle(
-                  color: isSelected ? const Color(0xFF1A73E8) : Colors.white,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-              if (isSelected)
-                const Icon(Icons.check, color: Color(0xFF1A73E8), size: 16),
-            ],
-          ),
-        );
-      }).toList(),
-    ).then((value) {
-      if (value != null) {
-        _setZoom(value);
-      }
-    });
-  }
 
   @override
   void dispose() {
     _pdfViewerController.dispose();
-    _pageController.dispose();
-    _thumbnailScrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF323639),
-      body: _isLoading
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: Colors.white),
-                  SizedBox(height: 16),
-                  Text(
-                    'Memuat PDF...',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ],
-              ),
-            )
-          : _error != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      _error!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _error = null;
-                        _isLoading = true;
-                      });
-                      _initializePdf();
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Coba Lagi'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Kembali'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : Column(
-              children: [
-                _buildTopToolbar(),
-                Expanded(
-                  child: Row(
-                    children: [
-                      if (_showSidebar) _buildSidebar(),
-                      Expanded(
-                        child: Container(
-                          color: const Color(0xFF525659),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              return Transform.scale(
-                                scale: _currentZoom < 1.0 ? _currentZoom : 1.0,
-                                child: SizedBox(
-                                  width: constraints.maxWidth,
-                                  height: constraints.maxHeight,
-                                  child: _buildPdfViewer(),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildPdfViewer() {
-    if (_pdfBytes == null) {
-      return const Center(
-        child: Text(
-          'PDF data tidak tersedia',
-          style: TextStyle(color: Colors.white70),
+      backgroundColor: const Color(0xFF525659),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF323639),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      );
-    }
-
-    return SfPdfViewer.memory(
-      _pdfBytes!,
-      key: ValueKey(widget.assetPath),
-      controller: _pdfViewerController,
-      enableDoubleTapZooming: true,
-      enableTextSelection: true,
-      canShowScrollHead: false,
-      canShowScrollStatus: false,
-      pageLayoutMode:
-          PdfPageLayoutMode.single, // Changed from continuous to single
-      initialZoomLevel: 1.0,
-      onDocumentLoaded: _onDocumentLoaded,
-      onPageChanged: _onPageChanged,
-      onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
-        if (kDebugMode) {
-          print('PDF Load Failed - Error: ${details.error}');
-          print('PDF Load Failed - Description: ${details.description}');
-        }
-        setState(() {
-          _error =
-              'Gagal memuat dokumen PDF\n\n'
-              'Error: ${details.error}\n'
-              'Detail: ${details.description}\n\n'
-              'File: ${widget.assetPath}';
-        });
-      },
-    );
-  }
-
-  Widget _buildTopToolbar() {
-    return Container(
-      height: 56,
-      color: const Color(0xFF323639),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: _toggleSidebar,
-            tooltip: 'Toggle Sidebar',
+        title: Text(
+          widget.title.replaceAll('.pdf', '').toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
-          Expanded(
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.zoom_out, color: Colors.white),
+            onPressed: () {
+              _pdfViewerController.zoomLevel =
+                  (_pdfViewerController.zoomLevel - 0.25).clamp(0.5, 3.0);
+            },
+            tooltip: 'Zoom Out',
+          ),
+          Center(
             child: Text(
-              widget.title.replaceAll('.pdf', '').toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
+              '${(_pdfViewerController.zoomLevel * 100).toInt()}%',
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.zoom_in, color: Colors.white),
+            onPressed: () {
+              _pdfViewerController.zoomLevel =
+                  (_pdfViewerController.zoomLevel + 0.25).clamp(0.5, 3.0);
+            },
+            tooltip: 'Zoom In',
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.chevron_left, color: Colors.white),
+            onPressed: _currentPage > 1
+                ? () => _pdfViewerController.previousPage()
+                : null,
+            tooltip: 'Previous Page',
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3C4043),
-              borderRadius: BorderRadius.circular(4),
+            alignment: Alignment.center,
+            child: Text(
+              '$_currentPage / $_totalPages',
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 40,
-                  child: TextField(
-                    controller: _pageController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    onSubmitted: (value) {
-                      final page = int.tryParse(value);
-                      if (page != null) {
-                        _goToPage(page);
-                      }
-                    },
-                  ),
-                ),
-                Text(
-                  ' / $_totalPages',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right, color: Colors.white),
+            onPressed: _currentPage < _totalPages
+                ? () => _pdfViewerController.nextPage()
+                : null,
+            tooltip: 'Next Page',
           ),
           const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              Icons.remove,
-              color: _currentZoom > _zoomLevels.first
-                  ? Colors.white
-                  : Colors.white38,
-              size: 20,
-            ),
-            onPressed: _currentZoom > _zoomLevels.first ? _zoomOut : null,
-            tooltip: 'Zoom Out',
-          ),
-          InkWell(
-            onTap: _showZoomMenu,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3C4043),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${(_currentZoom * 100).toInt()}%',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    color: Colors.white70,
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: _currentZoom < _zoomLevels.last
-                  ? Colors.white
-                  : Colors.white38,
-              size: 20,
-            ),
-            onPressed: _currentZoom < _zoomLevels.last ? _zoomIn : null,
-            tooltip: 'Zoom In',
-          ),
-          Container(
-            width: 1,
-            height: 24,
-            color: Colors.white24,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-          ),
-          IconButton(
-            icon: const Icon(Icons.fit_screen, color: Colors.white, size: 20),
-            onPressed: _resetZoom,
-            tooltip: 'Fit to Page',
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white, size: 20),
-            onPressed: () => Navigator.pop(context),
-            tooltip: 'Close',
-          ),
         ],
       ),
-    );
-  }
+      body: SfPdfViewer.asset(
+        widget.assetPath,
+        key: _pdfViewerKey,
+        controller: _pdfViewerController,
+        canShowScrollHead: false,
+        canShowScrollStatus: false,
+        enableDoubleTapZooming: true,
+        enableTextSelection: true,
+        pageLayoutMode: PdfPageLayoutMode.continuous,
+        onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+          setState(() {
+            _totalPages = details.document.pages.count;
+          });
+        },
+        onPageChanged: (PdfPageChangedDetails details) {
+          setState(() {
+            _currentPage = details.newPageNumber;
+          });
+        },
+        onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+          if (kDebugMode) {
+            print('PDF Load Failed: ${details.error}');
+            print('Description: ${details.description}');
+          }
 
-  Widget _buildSidebar() {
-    return Container(
-      width: 240,
-      color: const Color(0xFF3C4043),
-      child: Column(
-        children: [
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.white12, width: 1),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load PDF: ${details.description}'),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'Close',
+                textColor: Colors.white,
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
-            child: const Row(
-              children: [
-                Icon(Icons.list, color: Colors.white70, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Thumbnails',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              controller: _thumbnailScrollController,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _totalPages,
-              itemBuilder: (context, index) {
-                final pageNumber = index + 1;
-                final isCurrentPage = pageNumber == _currentPage;
-                return GestureDetector(
-                  onTap: () => _goToPage(pageNumber),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isCurrentPage
-                          ? const Color(0xFF1A73E8).withOpacity(0.2)
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: isCurrentPage
-                            ? const Color(0xFF1A73E8)
-                            : Colors.white12,
-                        width: isCurrentPage ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          height: 150,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.description,
-                              size: 40,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '$pageNumber',
-                          style: TextStyle(
-                            color: isCurrentPage
-                                ? const Color(0xFF1A73E8)
-                                : Colors.white70,
-                            fontSize: 12,
-                            fontWeight: isCurrentPage
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
